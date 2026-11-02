@@ -3,6 +3,7 @@ const CACHE_NAME = 'lich-am-pwa-v1';
 const APP_SHELL = [
   './', './index.html', './manifest.webmanifest',
   './assets/app.css', './assets/app.js', './assets/calendar-core.js', './assets/online-data.js',
+  './quotes.json',
   './assets/icons/icon.svg', './assets/icons/icon-192.png', './assets/icons/icon-512.png'
 ];
 self.addEventListener('install', event => {
