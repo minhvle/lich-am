@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "Lịch Âm Cao Niên",
+  "short_name": "Lịch Âm",
+  "description": "Lịch âm Việt Nam và các tiện ích ngày tốt, giờ hoàng đạo, bài khấn.",
+  "lang": "vi",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8F5EE",
+  "theme_color": "#064E3B",
+  "icons": [
+    {"src":"assets/icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"assets/icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
