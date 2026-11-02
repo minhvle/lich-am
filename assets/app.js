@@ -17,6 +17,34 @@ function appendTextElement(parent,tag,className,text){
 }
 function padNumber(value){return value<10?'0'+value:String(value)}
 function localDateString(date){return date.getFullYear()+'-'+padNumber(date.getMonth()+1)+'-'+padNumber(date.getDate())}
+var fallbackQuotes=['Một cây làm chẳng nên non ba cây chụm lại nên hòn núi cao.','Kính lão đắc thọ, trọng già già để tuổi cho.','Ăn quả nhớ kẻ trồng cây, ăn khoai nhớ kẻ cho dây mà trồng.','Con người có tổ có tông, như cây có cội như sông có nguồn.','Lá rụng về cội, nước chảy về nguồn.','Gieo hành vi gặt thói quen, gieo thói quen gặt tính cách.']
+var dailyQuotes=fallbackQuotes
+var dailyQuote=fallbackQuotes[Math.floor(Math.random()*fallbackQuotes.length)]
+function selectDailyQuote(quotes,dateKey){
+  var candidates=[]
+  for(var i=0;i<quotes.length;i++){
+    var quote=quotes[i],text=typeof quote==='string'?quote:quote&&quote.text
+    if(typeof text==='string'&&text.trim())candidates.push(text.trim())
+  }
+  if(candidates.length===0)return
+  var savedSelection=null
+  try{savedSelection=JSON.parse(localStorage.getItem('dailyQuoteSelection')||'null')}catch(e){}
+  if(savedSelection&&savedSelection.date===dateKey&&candidates.indexOf(savedSelection.quote)!==-1){
+    dailyQuote=savedSelection.quote
+  }else{
+    var choices=candidates
+    if(savedSelection&&candidates.length>1){
+      choices=candidates.filter(function(candidate){return candidate!==savedSelection.quote})
+    }
+    dailyQuote=choices[Math.floor(Math.random()*choices.length)]
+    try{localStorage.setItem('dailyQuoteSelection',JSON.stringify({date:dateKey,quote:dailyQuote}))}catch(e){}
+  }
+  var quoteElement=document.getElementById('daily-quote')
+  if(quoteElement)quoteElement.innerText=dailyQuote
+}
+function loadDailyQuote(){
+  fetch('./quotes.json').then(function(response){if(!response.ok)throw Error('Could not load quotes');return response.json()}).then(function(quotes){dailyQuotes=quotes;selectDailyQuote(dailyQuotes,localDateString(new Date()))}).catch(function(){dailyQuotes=fallbackQuotes;selectDailyQuote(dailyQuotes,localDateString(new Date()))})
+}
 function parseLocalDate(value){
   var parts=String(value||'').split('-')
   if(parts.length!==3)return new Date()
@@ -40,11 +68,10 @@ function getElderDayData(dateStr){
   var wd=['CHỦ NHẬT','THỨ HAI','THỨ BA','THỨ TƯ','THỨ NĂM','THỨ SÁU','THỨ BẢY']
   var ld=convertSolar2Lunar(day,month,year,7)
   var ly=ld[0],lm=ld[1],lyr=ld[2],ll=ld[3],yc=getYearCanChi(lyr),mc=getMonthCanChi(lyr,lm),jd=jdFromDate(day,month,year),dc=getDayCanChi(jd)
-  var assessment=LichAmCore.assessSolarDate({day:day,month:month,year:year}),quotes=['Một cây làm chẳng nên non ba cây chụm lại nên hòn núi cao.','Kính lão đắc thọ, trọng già già để tuổi cho.','Ăn quả nhớ kẻ trồng cây, ăn khoai nhớ kẻ cho dây mà trồng.','Con người có tổ có tông, như cây có cội như sông có nguồn.','Lá rụng về cội, nước chảy về nguồn.','Gieo hành vi gặt thói quen, gieo thói quen gặt tính cách.']
-  var qi=(day+month)%quotes.length,dci=(jd+1)%12,hrs=getHoursForDay(dci)
+  var assessment=LichAmCore.assessSolarDate({day:day,month:month,year:year}),dci=(jd+1)%12,hrs=getHoursForDay(dci)
   var cm={'Chuột':'Mậu Ngọ, Nhâm Ngọ, Canh Tý','Trâu':'Kỷ Mùi, Quý Mùi, Tân Sửu','Hổ':'Canh Thân, Giáp Thân, Mậu Dần','Mèo':'Tân Dậu, Ất Dậu, Kỷ Mão','Rồng':'Nhâm Tuất, Bính Tuất, Giáp Thìn','Rắn':'Quý Hợi, Đinh Hợi, Ất Tỵ','Ngựa':'Nhâm Tý, Bính Tý, Giáp Ngọ','Dê':'Quý Sửu, Đinh Sửu, Ất Mùi','Khỉ':'Mậu Dần, Bính Dần, Canh Thần','Gà':'Kỷ Mão, Đinh Mão, Tân Dậu','Chó':'Canh Thìn, Bính Thìn, Mậu Tuất','Hợi':'Tân Tỵ, Đinh Tỵ, Kỷ Hợi'}
   var ca=cm[dc.animal]||'Xung khắc các tuổi Thân, Dần',term=LichAmCore.getSolarTerm(day,month,year)
-  return{solar:{day:day,month:'Tháng '+month,year:year,weekday:wd[d.getDay()]},lunar:{day:ly,month:'Tháng '+(lm<10?'0':'')+lm+(ll?' (Nhuận)':''),yearChi:yc.text,monthChi:mc.text,dayChi:dc.text,yearAnimal:yc.animal,monthAnimal:mc.animal,dayAnimal:dc.animal},isGoodDay:assessment.isGood,starText:assessment.label,quote:quotes[qi],goodHours:hrs.goodHours,badHours:hrs.badHours,shouldDo:assessment.shouldDo,shouldAvoid:assessment.shouldAvoid,clashAges:ca,solarTerm:term.current,termStart:term.currentStart+'/'+term.currentYear,nextTerm:term.next,nextTermStart:term.nextStart+'/'+term.nextYear}
+  return{solar:{day:day,month:'Tháng '+month,year:year,weekday:wd[d.getDay()]},lunar:{day:ly,month:'Tháng '+(lm<10?'0':'')+lm+(ll?' (Nhuận)':''),yearChi:yc.text,monthChi:mc.text,dayChi:dc.text,yearAnimal:yc.animal,monthAnimal:mc.animal,dayAnimal:dc.animal},isGoodDay:assessment.isGood,starText:assessment.label,quote:dailyQuote,goodHours:hrs.goodHours,badHours:hrs.badHours,shouldDo:assessment.shouldDo,shouldAvoid:assessment.shouldAvoid,clashAges:ca,solarTerm:term.current,termStart:term.currentStart+'/'+term.currentYear,nextTerm:term.next,nextTermStart:term.nextStart+'/'+term.nextYear}
 }
 // ===== STATE =====
 var initDate=new Date(),lastKnownToday=localDateString(initDate),currentDate=lastKnownToday,currentTab='home',currentMonthView=initDate.getMonth()+1,currentYearView=initDate.getFullYear(),currentGoodDayCategory='cuoihoi',isBellEnabled=false,isHighContrast=false,isAutoScrolling=false,scrollTimer=null,timeRefreshTimer=null,currentPrayerFontSize=18
@@ -334,6 +361,7 @@ function updateLunarData(jsonStr){
 }
 function refreshForClockChange(){
   var now=new Date(),today=localDateString(now),previousParts=lastKnownToday.split('-')
+  if(today!==lastKnownToday)selectDailyQuote(dailyQuotes,today)
   var followedToday=currentDate===lastKnownToday
   var followedCurrentMonth=currentMonthView===parseInt(previousParts[1],10)&&currentYearView===parseInt(previousParts[0],10)
   lastKnownToday=today
@@ -355,6 +383,8 @@ function scheduleClockRefresh(){
 window.onNativeResume=function(){refreshForClockChange();scheduleClockRefresh()}
 // ===== INIT =====
 window.onload=function(){
+  selectDailyQuote(dailyQuotes,localDateString(new Date()))
+  loadDailyQuote()
   renderDayView()
   renderPrayersList()
   scheduleClockRefresh()
